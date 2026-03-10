@@ -60,7 +60,15 @@ export default function SignupPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="flex flex-col gap-4 w-80">
+      <form
+        className="flex flex-col gap-4 w-80"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!loading) {
+            signUp()
+          }
+        }}
+      >
         <h2 className="text-2xl font-semibold">Sign Up</h2>
 
         <input
@@ -88,13 +96,13 @@ export default function SignupPage() {
         />
 
         <button
+          type="submit"
           className="bg-black text-white p-2 disabled:opacity-50"
           disabled={loading}
-          onClick={signUp}
         >
           {loading ? "Signing up..." : "Sign Up"}
         </button>
-      </div>
+      </form>
     </div>
   )
 }

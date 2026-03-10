@@ -34,7 +34,15 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="flex flex-col gap-4 w-80">
+      <form
+        className="flex flex-col gap-4 w-80"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!loading) {
+            login()
+          }
+        }}
+      >
         <h2 className="text-2xl font-semibold">Login</h2>
         <input
           type="email"
@@ -51,13 +59,13 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
         />
         <button
+          type="submit"
           className="bg-black text-white p-2 disabled:opacity-50"
           disabled={loading}
-          onClick={login}
         >
           {loading ? "Logging in..." : "Login"}
         </button>
-      </div>
+      </form>
     </div>
   )
 }

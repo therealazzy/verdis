@@ -18,7 +18,7 @@ export default function Dashboard() {
         Welcome, {profile?.username || "User"} 🌱
       </h1>
       <p className="text-sm text-white/70">
-        Settle in, breathe, and focus. This space is yours.
+       ---
       </p>
     </div>
   )
