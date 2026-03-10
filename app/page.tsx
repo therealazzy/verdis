@@ -223,12 +223,7 @@ export default function Dashboard() {
         }`}
       />
       <div className="surface-soft rounded-xl p-10 shadow-lg shadow-black/40 w-full max-w-lg relative z-10">
-        <h1 className="text-3xl font-semibold mb-2">
-          Welcome, {profile?.username || "User"} 🌱
-        </h1>
-        <p className="text-sm text-white/70 mb-6">
-          Set a focus session. Each completed session grows your plant for today.
-        </p>
+        
 
         <div className="flex flex-col items-center gap-6">
           <div
