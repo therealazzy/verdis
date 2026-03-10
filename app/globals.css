@@ -1,1 +1,70 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-bg: #fca311;
+    --color-surface: #14213d;
+    --color-surface-soft: #1f2a48;
+    --color-accent: #e5e5e5;
+    --color-text: #ffffff;
+  }
+
+  :root[data-theme="dark"] {
+    --color-bg: #3b214f;
+    --color-surface: #4b2b62;
+    --color-surface-soft: #5a3475;
+    --color-accent: #e5e5e5;
+    --color-text: #ffffff;
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+      "Inter", sans-serif;
+  }
+
+  main {
+    min-height: calc(100vh - 4rem);
+  }
+}
+
+@layer components {
+  .surface {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  .surface-soft {
+    background-color: var(--color-surface-soft);
+    color: var(--color-text);
+  }
+
+  .accent-pill {
+    background-color: var(--color-accent);
+    color: #14213d;
+  }
+
+  .btn-primary {
+    @apply px-3 py-1 rounded-md font-medium transition-colors;
+    background-color: var(--color-accent);
+    color: #14213d;
+  }
+
+  .btn-primary:hover {
+    background-color: #ffffff;
+  }
+
+  .link-accent {
+    color: var(--color-accent);
+  }
+
+  .link-accent:hover {
+    text-decoration: underline;
+  }
+}
