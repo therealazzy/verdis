@@ -20,6 +20,7 @@
   html,
   body {
     height: 100%;
+    overflow: hidden;
   }
 
   body {
@@ -30,7 +31,7 @@
   }
 
   main {
-    min-height: calc(100vh - 4rem);
+    height: 100%;
   }
 }
 
