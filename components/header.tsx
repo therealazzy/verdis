@@ -34,9 +34,11 @@ export default function Header() {
           </Toggle>
 
           {isAuthed ? (
-            <div className="hidden items-center gap-3 text-sm text-white/80 sm:flex">
-              <span>{profile?.username || "User"}</span>
-              <button onClick={logout} className="btn-primary">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-white/80">
+              <span className="max-w-[120px] truncate sm:max-w-none">
+                {profile?.username || "User"}
+              </span>
+              <button onClick={logout} className="btn-primary px-3 py-1 text-xs sm:text-sm">
                 Logout
               </button>
             </div>

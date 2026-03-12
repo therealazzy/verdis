@@ -234,11 +234,11 @@ export function MarathonTimer() {
         </span>
       <div className="flex flex-col items-center gap-4 mb-4">
         <div
-          className={`w-48 h-48 rounded-full border-4 border-white/20 flex items-center justify-center shadow-[0_0_40px_rgba(0,0,0,0.5)] ${
+          className={`w-40 h-40 sm:w-48 sm:h-48 rounded-full border-4 border-white/20 flex items-center justify-center shadow-[0_0_40px_rgba(0,0,0,0.5)] ${
             isRunning ? "animate-pulse" : ""
           }`}
         >
-          <span className="text-3xl font-mono">
+          <span className="text-3xl sm:text-4xl font-mono">
             {formatTime(secondsLeft)}
           </span>
         </div>
