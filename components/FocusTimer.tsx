@@ -293,9 +293,8 @@ export function FocusTimer() {
               </>
             )}
           </div>
-
-          {/* Spacer to keep height consistent with MarathonTimer */}
-          <div className="h-4" aria-hidden="true" />
+          {/* Spacer */}
+          <div className="h-1" aria-hidden="true" />
           <div className="mt-4 flex flex-col items-center gap-2">
             <div className="w-16 h-16 rounded-lg surface flex items-center justify-center text-2xl">
               {plantStageEmoji(todayStage)}

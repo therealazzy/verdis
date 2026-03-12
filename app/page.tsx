@@ -10,8 +10,8 @@ export default function Dashboard() {
   const [mode, setMode] = useState<TimerMode>("focus")
 
   return (
-    <div className="flex w-full max-w-5xl mx-auto gap-6 items-center h-[560px]">
-      <div className="flex flex-col gap-2 justify-center h-full">
+    <div className="flex flex-col items-stretch gap-6 px-4 py-6 sm:px-6 md:flex-row md:items-center md:h-[560px] max-w-5xl mx-auto w-full">
+      <div className="flex flex-row md:flex-col gap-2 md:justify-center md:h-full">
         <button
           type="button"
           onClick={() => setMode("focus")}
