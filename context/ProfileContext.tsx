@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabaseClient"
 type Profile = {
   id: string
   username: string | null
-  // add other profile fields here later (e.g., streakCount)
+  // ToDo: add other profile fields; streaks
 }
 
 type ProfileContextType = {

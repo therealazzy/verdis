@@ -2,6 +2,7 @@
 
 import { useProfile } from "@/context/ProfileContext"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { supabase } from "@/lib/supabaseClient"
 import { useTheme } from "@/context/ThemeContext"
 import { Toggle } from "@/components/ui/toggle"
@@ -35,9 +36,12 @@ export default function Header() {
 
           {isAuthed ? (
             <div className="flex items-center gap-2 text-xs sm:text-sm text-white/80">
-              <span className="max-w-[120px] truncate sm:max-w-none">
+              <Link
+                href="/profile"
+                className="max-w-[120px] truncate sm:max-w-none link-accent"
+              >
                 {profile?.username || "User"}
-              </span>
+              </Link>
               <button onClick={logout} className="btn-primary px-3 py-1 text-xs sm:text-sm">
                 Logout
               </button>
