@@ -22,7 +22,9 @@ export default function Header() {
   return (
     <header className="border-b border-white/10 bg-black/40 backdrop-blur surface">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
-        <h1 className="text-lg font-bold tracking-wide sm:text-xl">🌱 Verdis</h1>
+        <Link href="/" className="text-lg font-bold tracking-wide sm:text-xl">
+          🌱 Verdis
+        </Link>
 
         <div className="flex items-center gap-3 sm:gap-4">
           <Toggle
