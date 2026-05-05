@@ -1,52 +1,42 @@
-"use client"
-
-import { useProfile } from "@/context/ProfileContext"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { supabase } from "@/lib/supabaseClient"
-import { useTheme } from "@/context/ThemeContext"
-import { Toggle } from "@/components/ui/toggle"
+import { signOutAction } from "@/app/actions/auth"
+import { ThemeToggle } from "@/components/ThemeToggle"
+import { getAuthProfile } from "@/lib/server-data"
 
-export default function Header() {
-  const { profile } = useProfile()
-  const router = useRouter()
-  const { theme, toggleTheme } = useTheme()
-
-  const logout = async () => {
-    await supabase.auth.signOut()
-    router.push("/login")
-  }
+export default async function Header() {
+  const profile = await getAuthProfile()
 
   const isAuthed = !!profile
 
   return (
-    <header className="border-b border-white/10 bg-black/40 backdrop-blur surface">
+    <header className="border-b border-white/10 surface">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/" className="text-lg font-bold tracking-wide sm:text-xl">
           🌱 Verdis
         </Link>
 
         <div className="flex items-center gap-3 sm:gap-4">
-          <Toggle
-            aria-label="Toggle dark mode"
-            pressed={theme === "dark"}
-            onPressedChange={toggleTheme}
-            variant="outline"
-          >
-            {theme === "dark" ? "☾" : "☼"}
-          </Toggle>
+          <ThemeToggle />
 
           {isAuthed ? (
             <div className="flex items-center gap-2 text-xs sm:text-sm text-white/80">
+              <Link href="/dashboard" className="link-accent">
+                Timer
+              </Link>
               <Link
                 href="/profile"
                 className="max-w-[120px] truncate sm:max-w-none link-accent"
               >
-                {profile?.username || "User"}
+                Profile
               </Link>
-              <button onClick={logout} className="btn-primary px-3 py-1 text-xs sm:text-sm">
-                Logout
-              </button>
+              <form action={signOutAction}>
+                <button
+                  type="submit"
+                  className="btn-primary px-3 py-1 text-xs sm:text-sm"
+                >
+                  Logout
+                </button>
+              </form>
             </div>
           ) : (
             <div className="flex items-center gap-3 text-xs sm:text-sm text-white/80">

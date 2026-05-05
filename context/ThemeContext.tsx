@@ -12,19 +12,16 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light")
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "dark"
     const stored = window.localStorage.getItem("theme") as Theme | null
-    if (stored === "light" || stored === "dark") {
-      setTheme(stored)
-    }
-  }, [])
+    return stored === "light" || stored === "dark" ? stored : "dark"
+  })
 
   useEffect(() => {
     if (typeof document === "undefined") return
     document.documentElement.setAttribute("data-theme", theme)
+    document.documentElement.classList.toggle("dark", theme === "dark")
     if (typeof window !== "undefined") {
       window.localStorage.setItem("theme", theme)
     }

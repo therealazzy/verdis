@@ -1,7 +1,6 @@
 import "./globals.css"
-import Header from "@/components/header"
-import { ProfileProvider } from "@/context/ProfileContext"
 import { ThemeProvider } from "@/context/ThemeContext"
+import Header from "@/components/header"
 
 export const metadata = {
   title: "Verdis",
@@ -10,15 +9,18 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var stored=localStorage.getItem("theme");var theme=(stored==="light"||stored==="dark")?stored:"dark";var root=document.documentElement;root.setAttribute("data-theme",theme);root.classList.toggle("dark",theme==="dark");root.style.colorScheme=theme;}catch(e){var root=document.documentElement;root.setAttribute("data-theme","dark");root.classList.add("dark");root.style.colorScheme="dark";}})();`,
+          }}
+        />
+      </head>
       <body className="text-white min-h-screen flex flex-col">
         <ThemeProvider>
-          <ProfileProvider>
-            <Header />
-            <main className="flex-1 flex items-center justify-center max-w-4xl mx-auto px-4 py-8 pb-16 w-full">
-              {children}
-            </main>
-          </ProfileProvider>
+          <Header />
+          <main className="w-full flex-1">{children}</main>
         </ThemeProvider>
       </body>
     </html>

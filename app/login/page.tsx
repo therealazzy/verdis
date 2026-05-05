@@ -1,71 +1,92 @@
-"use client"
+import { redirect } from "next/navigation"
+import Link from "next/link"
+import Image from "next/image"
+import { loginAction } from "@/app/actions/auth"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabaseClient"
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>
+}) {
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (user) redirect("/")
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
-
-  // Redirect if already logged in
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getUser()
-      if (data.user) router.replace("/")
-    }
-    checkAuth()
-  }, [])
-
-  const login = async () => {
-    setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
-
-    if (error) {
-      alert(error.message)
-      return
-    }
-
-    router.push("/")
-  }
+  const params = await searchParams
+  const errorMessage =
+    params.error === "missing_fields"
+      ? "Please fill in both email and password."
+      : params.error === "invalid_credentials"
+        ? "Invalid email or password."
+        : ""
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <form
-        className="flex flex-col gap-4 w-80"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (!loading) {
-            login()
-          }
-        }}
-      >
-        <h2 className="text-2xl font-semibold">Login</h2>
-        <input
-          type="email"
-          placeholder="Email"
-          className="border p-2"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+    <section className="px-6 py-6 md:px-16 lg:px-24 xl:px-32">
+      <div className="relative flex min-h-[calc(100vh-5rem)] items-center justify-center overflow-hidden rounded-[2rem] px-6 py-10 md:px-12">
+        <Image
+          src="/landing/hero-gradient-light.svg"
+          alt=""
+          fill
+          className="object-cover dark:hidden"
+          priority
         />
-        <input
-          type="password"
-          placeholder="Password"
-          className="border p-2"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+        <Image
+          src="/landing/hero-gradient-dark.svg"
+          alt=""
+          fill
+          className="hidden object-cover dark:block"
+          priority
         />
-        <button
-          type="submit"
-          className="bg-black text-white p-2 disabled:opacity-50"
-          disabled={loading}
+        <form
+          className="relative z-10 w-full max-w-md rounded-[1.5rem] p-8 shadow-lg sm:p-10"
+          action={loginAction}
+          style={{
+            border: "1px solid var(--color-border-soft)",
+            backgroundColor: "transparent",
+            color: "var(--color-text)",
+          }}
         >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
-    </div>
+          <h2 className="text-3xl font-semibold">Log in</h2>
+          <p className="mt-2 text-sm text-[color:var(--color-text-muted)]">
+            Continue your focus journey in Verdis.
+          </p>
+          {errorMessage ? (
+            <p className="mt-4 rounded-md border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+              {errorMessage}
+            </p>
+          ) : null}
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            className="mt-6 w-full rounded-md border border-[color:var(--color-border-soft)] bg-transparent px-3 py-2 text-sm text-[color:var(--color-text)] placeholder:text-[color:var(--color-text-muted)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-text-muted)]"
+            required
+          />
+          <input
+            name="password"
+            type="password"
+            placeholder="Password"
+            className="mt-3 w-full rounded-md border border-[color:var(--color-border-soft)] bg-transparent px-3 py-2 text-sm text-[color:var(--color-text)] placeholder:text-[color:var(--color-text-muted)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-text-muted)]"
+            required
+          />
+          <button
+            type="submit"
+            className="mt-5 w-full rounded-md px-4 py-2 font-medium transition-opacity hover:opacity-95"
+            style={{ backgroundColor: "var(--color-accent)", color: "#1a1a1a" }}
+          >
+            Log in
+          </button>
+          <p className="mt-4 text-sm text-[color:var(--color-text-muted)]">
+            New to Verdis?{" "}
+            <Link href="/signup" className="font-medium text-[color:var(--color-accent)]">
+              Create an account
+            </Link>
+          </p>
+        </form>
+      </div>
+    </section>
   )
 }

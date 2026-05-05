@@ -1,8 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useProfile } from "@/context/ProfileContext"
-import { supabase } from "@/lib/supabaseClient"
+import type { Profile } from "@/lib/server-data"
+import {
+  completeMarathonSessionAction,
+  startMarathonSessionAction,
+} from "@/app/actions/sessions"
 
 function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60)
@@ -27,17 +30,14 @@ function plantStageLabel(stage: number | null) {
   }
 }
 
-function plantStageEmoji(stage: number | null) {
-  if (!stage || stage <= 0) return "🌱"
-  if (stage === 1) return "🌱"
-  if (stage === 2) return "🌿"
-  return "🌸"
-}
-
 type Phase = "focus" | "break"
 
-export function MarathonTimer() {
-  const { profile, loading } = useProfile()
+type MarathonTimerProps = {
+  profile: Profile | null
+  initialTodayStage: number
+}
+
+export function MarathonTimer({ profile, initialTodayStage }: MarathonTimerProps) {
 
   const [focusMinutes, setFocusMinutes] = useState(50)
   const [focusInput, setFocusInput] = useState("50")
@@ -50,31 +50,8 @@ export function MarathonTimer() {
   const [secondsLeft, setSecondsLeft] = useState(focusMinutes * 60)
   const [isRunning, setIsRunning] = useState(false)
   const [updating, setUpdating] = useState(false)
-  const [todayStage, setTodayStage] = useState<number | null>(null)
+  const [todayStage, setTodayStage] = useState<number | null>(initialTodayStage)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
-
-  // Load today's garden tile stage
-  useEffect(() => {
-    const loadToday = async () => {
-      if (!profile) return
-      const today = new Date().toISOString().slice(0, 10)
-      const { data, error } = await supabase
-        .from("garden_tiles")
-        .select("id, plant_stage")
-        .eq("user_id", profile.id)
-        .eq("date", today)
-
-      if (!error && data && data.length > 0) {
-        setTodayStage(data[0].plant_stage)
-      } else {
-        setTodayStage(0)
-      }
-    }
-
-    if (!loading) {
-      loadToday()
-    }
-  }, [profile, loading])
 
   useEffect(() => {
     if (isRunning && phase === "focus") {
@@ -117,6 +94,7 @@ export function MarathonTimer() {
         setSecondsLeft(Math.max(20, Math.round(focusMinutes)) * 60)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [secondsLeft, phase, isRunning, breakMinutes, focusMinutes, currentBlock, blocks])
 
   const totalPlannedFocusMinutes = useMemo(
@@ -125,7 +103,7 @@ export function MarathonTimer() {
   )
 
   const start = async () => {
-    if (!profile || loading || isRunning) return
+    if (!profile || isRunning) return
     setUpdating(true)
 
     // Resolve any pending input edits before starting
@@ -137,31 +115,21 @@ export function MarathonTimer() {
     setFocusMinutes(nextFocus)
     setFocusInput(String(nextFocus))
 
-    const totalMinutes =
-      Math.max(20, Math.round(nextFocus)) * Math.max(1, Math.round(blocks))
-
-    const { data, error } = await supabase
-      .from("sessions")
-      .insert({
-        user_id: profile.id,
-        duration_minutes: totalMinutes,
-        completed: false,
+    try {
+      const data = await startMarathonSessionAction({
+        focusMinutes: nextFocus,
+        blocks,
       })
-      .select("id")
-      .single()
-
-    if (error || !data) {
+      setCurrentSessionId(data.sessionId)
+      setPhase("focus")
+      setCurrentBlock(1)
+      setSecondsLeft(Math.max(20, Math.round(nextFocus)) * 60)
+      setIsRunning(true)
+    } catch (error) {
       console.error("Failed to start marathon session", error)
+    } finally {
       setUpdating(false)
-      return
     }
-
-    setCurrentSessionId(data.id as string)
-    setPhase("focus")
-    setCurrentBlock(1)
-    setSecondsLeft(Math.max(20, Math.round(nextFocus)) * 60)
-    setIsRunning(true)
-    setUpdating(false)
   }
 
   const reset = () => {
@@ -179,45 +147,20 @@ export function MarathonTimer() {
   )
 
   const completeMarathonSession = async () => {
-    if (!profile || !currentSessionId) return
+    if (!currentSessionId) return
 
     const elapsedMinutes = totalPlannedFocusMinutes
 
-    await supabase
-      .from("sessions")
-      .update({
-        completed: true,
-        duration_minutes: elapsedMinutes,
+    try {
+      const data = await completeMarathonSessionAction({
+        sessionId: currentSessionId,
+        elapsedMinutes,
       })
-      .eq("id", currentSessionId)
-
-    const today = new Date().toISOString().slice(0, 10)
-    const { data, error } = await supabase
-      .from("garden_tiles")
-      .select("id, plant_stage")
-      .eq("user_id", profile.id)
-      .eq("date", today)
-
-    let nextStage = 1
-    if (!error && data && data.length > 0) {
-      const currentStage = data[0].plant_stage ?? 0
-      nextStage = Math.min(currentStage + 1, 3)
-      await supabase
-        .from("garden_tiles")
-        .update({ plant_stage: nextStage })
-        .eq("id", data[0].id)
-    } else {
-      await supabase.from("garden_tiles").insert({
-        user_id: profile.id,
-        date: today,
-        plant_stage: 1,
-        plant_type: "flower",
-      })
-      nextStage = 1
+      setTodayStage(data.todayStage)
+      setCurrentSessionId(null)
+    } catch (error) {
+      console.error("Failed to complete marathon session", error)
     }
-
-    setTodayStage(nextStage)
-    setCurrentSessionId(null)
   }
 
   return (
@@ -229,12 +172,12 @@ export function MarathonTimer() {
       />
       <div className="surface-soft rounded-xl p-10 shadow-lg shadow-black/40 w-full max-w-lg relative z-10 min-h-[500px]">
       <h2 className="text-xl font-semibold mb-1">Marathon mode</h2>
-      <span className="text-xs uppercase tracking-wide text-white/60">
+      <span className="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)]">
           {isFocus ? "Focus" : "Break"} • Block {currentBlock} of {blocks}
         </span>
       <div className="flex flex-col items-center gap-4 mb-4">
         <div
-          className={`w-40 h-40 sm:w-48 sm:h-48 rounded-full border-4 border-white/20 flex items-center justify-center shadow-[0_0_40px_rgba(0,0,0,0.5)] ${
+          className={`w-40 h-40 sm:w-48 sm:h-48 rounded-full border-4 border-[color:var(--color-border-soft)] flex items-center justify-center shadow-[0_0_40px_rgba(0,0,0,0.5)] ${
             isRunning ? "animate-pulse" : ""
           }`}
         >
@@ -245,7 +188,7 @@ export function MarathonTimer() {
 
       </div>
 
-      <div className="grid grid-cols-3 gap-3 text-xs text-white/70 mb-4">
+      <div className="grid grid-cols-3 gap-3 text-xs text-[color:var(--color-text-muted)] mb-4">
         <label className="flex flex-col gap-1">
           <span className="uppercase tracking-wide text-[10px]">
             Focus (min)
@@ -272,7 +215,7 @@ export function MarathonTimer() {
                 setSecondsLeft(next * 60)
               }
             }}
-            className="w-full rounded-md border border-white/20 bg-transparent px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/60"
+            className="w-full rounded-md border border-[color:var(--color-border-soft)] bg-transparent px-2 py-1 text-xs text-[color:var(--color-text)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-text-muted)]"
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -301,7 +244,7 @@ export function MarathonTimer() {
                 setSecondsLeft(next * 60)
               }
             }}
-            className="w-full rounded-md border border-white/20 bg-transparent px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/60"
+            className="w-full rounded-md border border-[color:var(--color-border-soft)] bg-transparent px-2 py-1 text-xs text-[color:var(--color-text)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-text-muted)]"
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -324,7 +267,7 @@ export function MarathonTimer() {
                 setCurrentBlock(clamped)
               }
             }}
-            className="w-full rounded-md border border-white/20 bg-transparent px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/60"
+            className="w-full rounded-md border border-[color:var(--color-border-soft)] bg-transparent px-2 py-1 text-xs text-[color:var(--color-text)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-text-muted)]"
           />
         </label>
       </div>
@@ -332,7 +275,7 @@ export function MarathonTimer() {
       <div className="flex gap-3 justify-center">
         <button
           onClick={start}
-          disabled={updating || isRunning || !profile || loading}
+          disabled={updating || isRunning || !profile}
           className="btn-primary px-6 py-2 disabled:opacity-60"
         >
           Start marathon
@@ -340,7 +283,7 @@ export function MarathonTimer() {
         <button
           onClick={reset}
           disabled={updating}
-          className="px-4 py-2 rounded-md border border-white/20 text-sm text-white/80 hover:bg-white/5 disabled:opacity-60"
+          className="px-4 py-2 rounded-md border border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-60"
         >
           Reset
         </button>
@@ -350,7 +293,7 @@ export function MarathonTimer() {
         <div className="w-16 h-16 rounded-lg surface flex items-center justify-center text-2xl">
           {isFocus ? "🌱" : "🌿"}
         </div>
-        <span className="text-xs uppercase tracking-wide text-white/60">
+        <span className="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)]">
           Today&apos;s growth: {stageLabel}
         </span>
       </div>

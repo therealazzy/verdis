@@ -1,8 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useProfile } from "@/context/ProfileContext"
-import { supabase } from "@/lib/supabaseClient"
+import type { GardenTile, Profile } from "@/lib/server-data"
+import {
+  completeFocusSessionAction,
+  startFocusSessionAction,
+} from "@/app/actions/sessions"
 
 function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60)
@@ -34,8 +37,15 @@ function plantStageEmoji(stage: number | null) {
   return "🌸"
 }
 
-export function FocusTimer() {
-  const { profile, loading } = useProfile()
+type FocusTimerProps = {
+  profile: Profile | null
+  initialGardenData: {
+    todayStage: number
+    historyTiles: GardenTile[]
+  }
+}
+
+export function FocusTimer({ profile, initialGardenData }: FocusTimerProps) {
   const [plannedMinutes, setPlannedMinutes] = useState(25)
   const [plannedInput, setPlannedInput] = useState("25")
   const [sessionInitialSeconds, setSessionInitialSeconds] =
@@ -44,45 +54,12 @@ export function FocusTimer() {
   const [isRunning, setIsRunning] = useState(false)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)
-  const [todayStage, setTodayStage] = useState<number | null>(null)
-  const [historyTiles, setHistoryTiles] = useState<
-    { date: string; plant_stage: number; plant_type: string }[]
-  >([])
-
-  useEffect(() => {
-    const loadToday = async () => {
-      if (!profile) return
-      const today = new Date().toISOString().slice(0, 10)
-      const { data, error } = await supabase
-        .from("garden_tiles")
-        .select("id, plant_stage")
-        .eq("user_id", profile.id)
-        .eq("date", today)
-
-      if (!error && data && data.length > 0) {
-        setTodayStage(data[0].plant_stage)
-      } else {
-        setTodayStage(0)
-      }
-
-      const { data: history, error: historyError } = await supabase
-        .from("garden_tiles")
-        .select("date, plant_stage, plant_type")
-        .eq("user_id", profile.id)
-        .lt("date", today)
-        .order("date", { ascending: false })
-
-      if (!historyError && history) {
-        setHistoryTiles(history)
-      } else {
-        setHistoryTiles([])
-      }
-    }
-
-    if (!loading) {
-      loadToday()
-    }
-  }, [profile, loading])
+  const [todayStage, setTodayStage] = useState<number | null>(
+    initialGardenData.todayStage ?? 0,
+  )
+  const [historyTiles, setHistoryTiles] = useState<GardenTile[]>(
+    initialGardenData.historyTiles ?? [],
+  )
 
   useEffect(() => {
     if (!isRunning || timerSeconds <= 0) return
@@ -116,28 +93,18 @@ export function FocusTimer() {
     setPlannedInput(String(durationMinutes))
     setUpdating(true)
 
-    const { data, error } = await supabase
-      .from("sessions")
-      .insert({
-        user_id: profile.id,
-        duration_minutes: durationMinutes,
-        completed: false,
-      })
-      .select("id")
-      .single()
-
-    if (error || !data) {
+    try {
+      const data = await startFocusSessionAction(durationMinutes)
+      const startSeconds = data.plannedMinutes * 60
+      setCurrentSessionId(data.sessionId)
+      setSessionInitialSeconds(startSeconds)
+      setTimerSeconds(startSeconds)
+      setIsRunning(true)
+    } catch (error) {
       console.error("Failed to start session", error)
+    } finally {
       setUpdating(false)
-      return
     }
-
-    const startSeconds = durationMinutes * 60
-    setCurrentSessionId(data.id as string)
-    setSessionInitialSeconds(startSeconds)
-    setTimerSeconds(startSeconds)
-    setIsRunning(true)
-    setUpdating(false)
   }
 
   const completeSession = async () => {
@@ -150,42 +117,18 @@ export function FocusTimer() {
     const elapsedMinutes = Math.max(1, Math.round(elapsedSeconds / 60))
     const requiredMinutes = (sessionInitialSeconds ?? plannedMinutes * 60) / 60
 
-    await supabase
-      .from("sessions")
-      .update({
-        completed: elapsedMinutes >= requiredMinutes && requiredMinutes >= 20,
-        duration_minutes: elapsedMinutes,
+    try {
+      const gardenData = await completeFocusSessionAction({
+        sessionId: currentSessionId,
+        elapsedMinutes,
+        requiredMinutes,
       })
-      .eq("id", currentSessionId)
-
-    if (elapsedMinutes >= requiredMinutes && requiredMinutes >= 20) {
-      const today = new Date().toISOString().slice(0, 10)
-      const { data, error } = await supabase
-        .from("garden_tiles")
-        .select("id, plant_stage")
-        .eq("user_id", profile.id)
-        .eq("date", today)
-
-      let nextStage = 1
-      if (!error && data && data.length > 0) {
-        const currentStage = data[0].plant_stage ?? 0
-        nextStage = Math.min(currentStage + 1, 3)
-        await supabase
-          .from("garden_tiles")
-          .update({ plant_stage: nextStage })
-          .eq("id", data[0].id)
-      } else {
-        await supabase.from("garden_tiles").insert({
-          user_id: profile.id,
-          date: today,
-          plant_stage: 1,
-          plant_type: "flower",
-        })
-        nextStage = 1
-      }
-
-      setTodayStage(nextStage)
+      setTodayStage(gardenData.todayStage)
+      setHistoryTiles(gardenData.historyTiles)
+    } catch (error) {
+      console.error("Failed to complete session", error)
     }
+
     setCurrentSessionId(null)
     setSessionInitialSeconds(null)
     setTimerSeconds(plannedMinutes * 60)
@@ -204,13 +147,6 @@ export function FocusTimer() {
     [todayStage],
   )
 
-  if (loading)
-    return (
-      <div className="surface-soft rounded-xl p-10 shadow-lg shadow-black/40 w-full max-w-lg">
-        Loading...
-      </div>
-    )
-
   return (
     <div className="relative w-full flex items-center justify-center">
       <div
@@ -220,13 +156,13 @@ export function FocusTimer() {
       />
       <div className="surface-soft rounded-xl p-10 shadow-lg shadow-black/40 w-full max-w-lg relative z-10 min-h-[500px]">
       <h2 className="text-xl font-semibold mb-1">Focus mode</h2>
-      <p className="text-xs text-white/70 mb-4">
+      <p className="text-xs text-[color:var(--color-text-muted)] mb-4">
         Set a focus session. Each completed session grows your plant for today.
       </p>
 
         <div className="flex flex-col items-center gap-6">
           <div
-            className={`w-40 h-40 sm:w-48 sm:h-48 rounded-full border-4 border-white/20 flex items-center justify-center shadow-[0_0_40px_rgba(0,0,0,0.5)] ${
+            className={`w-40 h-40 sm:w-48 sm:h-48 rounded-full border-4 border-[color:var(--color-border-soft)] flex items-center justify-center shadow-[0_0_40px_rgba(0,0,0,0.5)] ${
               isRunning ? "animate-pulse" : ""
             }`}
           >
@@ -236,7 +172,7 @@ export function FocusTimer() {
           </div>
 
           <div className="flex gap-4 items-center">
-            <label className="flex items-center gap-2 text-xs text-white/70">
+            <label className="flex items-center gap-2 text-xs text-[color:var(--color-text-muted)]">
               <span className="uppercase tracking-wide text-[10px]">
                 Length (min)
               </span>
@@ -263,7 +199,7 @@ export function FocusTimer() {
                     setTimerSeconds(nextMinutes * 60)
                   }
                 }}
-                className="w-20 rounded-md border border-white/20 bg-transparent px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/60"
+                className="w-20 rounded-md border border-[color:var(--color-border-soft)] bg-transparent px-2 py-1 text-xs text-[color:var(--color-text)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-text-muted)]"
               />
             </label>
             {!isRunning ? (
@@ -286,7 +222,7 @@ export function FocusTimer() {
                 <button
                   onClick={cancelSession}
                   disabled={updating}
-                  className="px-4 py-2 rounded-md border border-white/20 text-sm text-white/70 hover:bg-white/5 disabled:opacity-60"
+                  className="px-4 py-2 rounded-md border border-[color:var(--color-border-soft)] text-sm text-[color:var(--color-text-muted)] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-60"
                 >
                   Cancel
                 </button>
@@ -299,14 +235,14 @@ export function FocusTimer() {
             <div className="w-16 h-16 rounded-lg surface flex items-center justify-center text-2xl">
               {plantStageEmoji(todayStage)}
             </div>
-            <span className="text-xs uppercase tracking-wide text-white/60">
+            <span className="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)]">
               Today&apos;s growth: {stageLabel}
             </span>
           </div>
 
           {historyTiles.length > 0 && (
             <div className="mt-8 w-full">
-              <h2 className="text-sm font-semibold text-white/70 mb-3">
+              <h2 className="text-sm font-semibold text-[color:var(--color-text-muted)] mb-3">
                 Previous days
               </h2>
               <div className="grid grid-cols-5 gap-3 sm:grid-cols-7">
@@ -320,7 +256,7 @@ export function FocusTimer() {
                   return (
                     <div
                       key={tile.date}
-                      className="flex flex-col items-center gap-1 text-xs text-white/70"
+                      className="flex flex-col items-center gap-1 text-xs text-[color:var(--color-text-muted)]"
                     >
                       <div className="w-10 h-10 rounded-lg surface flex items-center justify-center text-lg">
                         {plantStageEmoji(tile.plant_stage)}
