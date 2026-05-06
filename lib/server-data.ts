@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 export type Profile = {
   id: string
   username: string | null
+  current_streak: number | null
+  longest_streak: number | null
 }
 
 export type GardenTile = {
@@ -22,11 +24,18 @@ export const getAuthProfile = cache(async () => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username")
+    .select("id, username, current_streak, longest_streak")
     .eq("id", user.id)
     .single()
 
-  return (profile ?? { id: user.id, username: null }) as Profile
+  return (
+    profile ?? {
+      id: user.id,
+      username: null,
+      current_streak: 0,
+      longest_streak: 0,
+    }
+  ) as Profile
 })
 
 export async function getSessionStats(userId: string) {

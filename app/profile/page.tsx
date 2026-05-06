@@ -7,8 +7,8 @@ export default async function ProfilePage() {
   const profile = await getAuthProfile()
   if (!profile) {
     return (
-      <section className="px-6 py-6 md:px-16 lg:px-24 xl:px-32">
-        <div className="relative flex min-h-[calc(100vh-5rem)] items-center justify-center overflow-hidden rounded-[2rem] px-6 py-10 md:px-12">
+      <section className="relative h-[calc(100vh-64px)] overflow-hidden px-6 py-0 md:px-16 lg:px-24 xl:px-32">
+        <div className="relative flex h-full items-center justify-center overflow-hidden rounded-[2rem] bg-[rgba(241,245,249,0.88)] px-6 py-12 shadow-[0_24px_80px_rgba(15,23,42,0.22),0_8px_28px_rgba(51,65,85,0.18)] dark:bg-[rgba(30,41,59,0.72)] dark:shadow-[0_24px_80px_rgba(2,6,23,0.65),0_8px_28px_rgba(15,23,42,0.45)] md:px-12 md:py-16">
           <Image
             src="/landing/hero-gradient-light.svg"
             alt=""
@@ -23,7 +23,7 @@ export default async function ProfilePage() {
             className="hidden object-cover dark:block"
             priority
           />
-          <div className="surface-soft relative z-10 w-full max-w-lg rounded-xl p-10 text-center text-sm text-[color:var(--color-text-muted)] shadow-lg shadow-black/40">
+          <div className="relative z-10 w-full max-w-lg rounded-xl bg-transparent p-10 text-center text-sm text-black shadow-[0_20px_55px_rgba(2,6,23,0.45)] dark:text-white">
             You&apos;re not logged in.
             <div className="mt-4 flex justify-center gap-4">
               <Link href="/login" className="link-accent">
@@ -42,8 +42,8 @@ export default async function ProfilePage() {
   const totalHours = (stats.totalMinutes || 0) / 60
 
   return (
-    <section className="px-6 py-6 md:px-16 lg:px-24 xl:px-32">
-      <div className="relative flex min-h-[calc(100vh-5rem)] items-center justify-center overflow-hidden rounded-[2rem] px-6 py-10 md:px-12">
+    <section className="relative h-[calc(100vh-64px)] overflow-hidden px-6 py-0 md:px-16 lg:px-24 xl:px-32">
+      <div className="relative flex h-full items-center justify-center overflow-hidden rounded-[2rem] bg-[rgba(241,245,249,0.88)] px-6 py-12 shadow-[0_24px_80px_rgba(15,23,42,0.22),0_8px_28px_rgba(51,65,85,0.18)] dark:bg-[rgba(30,41,59,0.72)] dark:shadow-[0_24px_80px_rgba(2,6,23,0.65),0_8px_28px_rgba(15,23,42,0.45)] md:px-12 md:py-16">
         <Image
           src="/landing/hero-gradient-light.svg"
           alt=""
@@ -58,7 +58,7 @@ export default async function ProfilePage() {
           className="hidden object-cover dark:block"
           priority
         />
-        <div className="surface-soft relative z-10 flex min-h-[320px] w-full max-w-lg flex-col justify-between rounded-xl p-8 shadow-lg shadow-black/40 sm:p-10">
+        <div className="relative z-10 flex min-h-[320px] w-full max-w-lg flex-col justify-between rounded-xl bg-transparent p-8 text-black shadow-[0_20px_55px_rgba(2,6,23,0.45)] dark:text-white sm:p-10">
           <div>
             <h2 className="mb-1 text-xl font-semibold">Profile</h2>
             <p className="mb-6 text-xs text-[color:var(--color-text-muted)]">
@@ -74,8 +74,7 @@ export default async function ProfilePage() {
                     Current streak
                   </span>
                   <div className="mt-1 text-base font-medium">
-                    {/* Placeholder for streak value */}
-                    --
+                    {profile.current_streak ?? 0}
                   </div>
                   <p className="mt-1 text-[11px] text-[color:var(--color-text-muted)]">
                     Consecutive days you&apos;ve focused.
@@ -86,7 +85,7 @@ export default async function ProfilePage() {
                   <span className="text-[11px] uppercase tracking-wide text-[color:var(--color-text-muted)]">
                     Best streak
                   </span>
-                  <div className="mt-1 text-base font-medium">--</div>
+                  <div className="mt-1 text-base font-medium">{profile.longest_streak ?? 0}</div>
                   <p className="mt-1 text-[11px] text-[color:var(--color-text-muted)]">
                     Longest run you&apos;ve ever done.
                   </p>

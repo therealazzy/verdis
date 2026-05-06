@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import type { Profile } from "@/lib/server-data"
+import type { GardenTile, Profile } from "@/lib/server-data"
 import {
   completeMarathonSessionAction,
   startMarathonSessionAction,
@@ -30,14 +30,24 @@ function plantStageLabel(stage: number | null) {
   }
 }
 
+function plantStageEmoji(stage: number | null) {
+  if (!stage || stage <= 0) return "🌱"
+  if (stage === 1) return "🌱"
+  if (stage === 2) return "🌿"
+  return "🌸"
+}
+
 type Phase = "focus" | "break"
 
 type MarathonTimerProps = {
   profile: Profile | null
-  initialTodayStage: number
+  initialGardenData: {
+    todayStage: number
+    historyTiles: GardenTile[]
+  }
 }
 
-export function MarathonTimer({ profile, initialTodayStage }: MarathonTimerProps) {
+export function MarathonTimer({ profile, initialGardenData }: MarathonTimerProps) {
 
   const [focusMinutes, setFocusMinutes] = useState(50)
   const [focusInput, setFocusInput] = useState("50")
@@ -50,7 +60,8 @@ export function MarathonTimer({ profile, initialTodayStage }: MarathonTimerProps
   const [secondsLeft, setSecondsLeft] = useState(focusMinutes * 60)
   const [isRunning, setIsRunning] = useState(false)
   const [updating, setUpdating] = useState(false)
-  const [todayStage, setTodayStage] = useState<number | null>(initialTodayStage)
+  const [todayStage, setTodayStage] = useState<number | null>(initialGardenData.todayStage ?? 0)
+  const [historyTiles, setHistoryTiles] = useState<GardenTile[]>(initialGardenData.historyTiles ?? [])
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -157,6 +168,7 @@ export function MarathonTimer({ profile, initialTodayStage }: MarathonTimerProps
         elapsedMinutes,
       })
       setTodayStage(data.todayStage)
+      setHistoryTiles(data.historyTiles)
       setCurrentSessionId(null)
     } catch (error) {
       console.error("Failed to complete marathon session", error)
@@ -170,7 +182,7 @@ export function MarathonTimer({ profile, initialTodayStage }: MarathonTimerProps
           isRunning ? "opacity-100" : "opacity-0"
         }`}
       />
-      <div className="surface-soft rounded-xl p-10 shadow-lg shadow-black/40 w-full max-w-lg relative z-10 min-h-[500px]">
+      <div className="relative z-10 w-full max-w-lg min-h-[500px] rounded-xl bg-transparent p-10 text-black shadow-lg shadow-black/40 dark:text-white">
       <h2 className="text-xl font-semibold mb-1">Marathon mode</h2>
       <span className="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)]">
           {isFocus ? "Focus" : "Break"} • Block {currentBlock} of {blocks}
@@ -291,12 +303,40 @@ export function MarathonTimer({ profile, initialTodayStage }: MarathonTimerProps
 
       <div className="mt-4 flex flex-col items-center gap-2">
         <div className="w-16 h-16 rounded-lg surface flex items-center justify-center text-2xl">
-          {isFocus ? "🌱" : "🌿"}
+          {plantStageEmoji(todayStage)}
         </div>
         <span className="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)]">
           Today&apos;s growth: {stageLabel}
         </span>
       </div>
+      {historyTiles.length > 0 && (
+        <div className="mt-8 w-full">
+          <h2 className="mb-3 text-sm font-semibold text-[color:var(--color-text-muted)]">
+            Previous days
+          </h2>
+          <div className="grid grid-cols-5 gap-3 sm:grid-cols-7">
+            {historyTiles.map((tile) => {
+              const date = new Date(tile.date)
+              const label = date.toLocaleDateString(undefined, {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              })
+              return (
+                <div
+                  key={tile.date}
+                  className="flex flex-col items-center gap-1 text-xs text-[color:var(--color-text-muted)]"
+                >
+                  <div className="w-10 h-10 rounded-lg surface flex items-center justify-center text-lg">
+                    {plantStageEmoji(tile.plant_stage)}
+                  </div>
+                  <span className="leading-tight">{label}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
       </div>
     </div>
   )

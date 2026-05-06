@@ -7,14 +7,25 @@ import { useTheme } from "@/context/ThemeContext"
 export function HeroSection({ isAuthed }) {
   const { theme } = useTheme()
   const isDark = theme === "dark"
+  const handleScrollToFeatures = () => {
+    const lenis = window.__lenis
+    if (lenis) {
+      lenis.scrollTo("#features", { offset: -76 })
+      return
+    }
+
+    document.getElementById("features")?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
 
   return (
-    <section id="home" className="relative px-6 pb-8 pt-12 md:px-16 lg:px-24 xl:px-32">
+    <section id="home" className="relative px-6 pb-16 pt-0 md:px-16 lg:px-24 xl:px-32">
       <div
-        className="relative overflow-hidden rounded-[2rem] px-6 py-16 md:px-12 md:py-20"
+        className="relative flex min-h-[calc(100vh-64px)] items-center overflow-hidden rounded-[2rem] px-6 py-12 md:px-12 md:py-16"
         style={{
-          border: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(71,85,105,0.28)",
           backgroundColor: isDark ? "rgba(30,41,59,0.72)" : "rgba(241,245,249,0.88)",
+          boxShadow: isDark
+            ? "0 24px 80px rgba(2,6,23,0.65), 0 8px 28px rgba(15,23,42,0.45)"
+            : "0 24px 80px rgba(15,23,42,0.22), 0 8px 28px rgba(51,65,85,0.18)",
         }}
       >
         <Image
@@ -56,6 +67,18 @@ export function HeroSection({ isAuthed }) {
           </p>
 
           <div className="mt-10 flex w-full flex-col items-stretch justify-center gap-4 sm:w-auto sm:flex-row">
+            <Button
+              onClick={handleScrollToFeatures}
+              variant="outline"
+              className="min-h-12 px-7"
+              style={{
+                borderColor: "transparent",
+                backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(248,250,252,0.9)",
+                color: isDark ? "#f8fafc" : "#334155",
+              }}
+            >
+              Features
+            </Button>
             {isAuthed ? (
               <Button href="/dashboard" className="min-h-12 px-7">
                 Lock in

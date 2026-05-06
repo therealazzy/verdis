@@ -154,7 +154,7 @@ export function FocusTimer({ profile, initialGardenData }: FocusTimerProps) {
           isRunning ? "opacity-100" : "opacity-0"
         }`}
       />
-      <div className="surface-soft rounded-xl p-10 shadow-lg shadow-black/40 w-full max-w-lg relative z-10 min-h-[500px]">
+      <div className="relative z-10 w-full max-w-lg min-h-[500px] rounded-xl bg-transparent p-10 text-black shadow-lg shadow-black/40 dark:text-white">
       <h2 className="text-xl font-semibold mb-1">Focus mode</h2>
       <p className="text-xs text-[color:var(--color-text-muted)] mb-4">
         Set a focus session. Each completed session grows your plant for today.

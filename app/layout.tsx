@@ -1,6 +1,7 @@
 import "./globals.css"
 import { ThemeProvider } from "@/context/ThemeContext"
 import Header from "@/components/header"
+import { LenisProvider } from "@/components/LenisProvider"
 
 export const metadata = {
   title: "Verdis",
@@ -19,8 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="text-white min-h-screen flex flex-col">
         <ThemeProvider>
+          <LenisProvider />
           <Header />
-          <main className="w-full flex-1">{children}</main>
+          <main className="w-full flex-1 pt-16">{children}</main>
         </ThemeProvider>
       </body>
     </html>

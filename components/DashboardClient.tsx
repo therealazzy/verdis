@@ -19,7 +19,7 @@ export function DashboardClient({ profile, gardenData }: DashboardClientProps) {
   const [mode, setMode] = useState<TimerMode>("focus")
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col items-stretch gap-6 px-4 py-6 sm:px-6 md:h-[560px] md:flex-row md:items-center">
+    <div className="mx-auto flex w-full max-w-5xl flex-col items-stretch gap-6 px-4 py-6 sm:px-6 md:flex-row md:items-start">
       <div className="flex flex-row gap-2 md:h-full md:flex-col md:justify-center">
         <button
           type="button"
@@ -49,7 +49,7 @@ export function DashboardClient({ profile, gardenData }: DashboardClientProps) {
         {mode === "focus" ? (
           <FocusTimer profile={profile} initialGardenData={gardenData} />
         ) : (
-          <MarathonTimer profile={profile} initialTodayStage={gardenData.todayStage} />
+          <MarathonTimer profile={profile} initialGardenData={gardenData} />
         )}
       </div>
     </div>
