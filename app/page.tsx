@@ -1,6 +1,7 @@
 import { getAuthProfile } from "@/lib/server-data"
 import { HeroSection } from "@/components/landing/HeroSection"
 import { Footer } from "@/components/landing/Footer"
+import { LandingScrollbarToggle } from "@/components/landing/LandingScrollbarToggle"
 
 const features = [
   {
@@ -25,6 +26,7 @@ export default async function LandingPage() {
       className="min-h-full"
       style={{ backgroundColor: "var(--color-bg)", color: "var(--color-text)" }}
     >
+      <LandingScrollbarToggle />
       <HeroSection isAuthed={Boolean(profile)} />
       <section id="features" className="min-h-screen scroll-mt-20 py-16 md:py-20">
         <div className="mx-auto max-w-6xl px-6">

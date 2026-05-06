@@ -6,6 +6,17 @@ html.lenis body {
   height: auto;
 }
 
+html.landing-scroll-hidden,
+body.landing-scroll-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html.landing-scroll-hidden::-webkit-scrollbar,
+body.landing-scroll-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
 }
@@ -43,6 +54,10 @@ html.lenis body {
   body {
     height: 100%;
     overflow-x: hidden;
+  }
+
+  html {
+    scrollbar-gutter: stable;
   }
 
   body {

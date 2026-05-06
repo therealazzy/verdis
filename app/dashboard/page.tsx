@@ -13,7 +13,7 @@ export default async function DashboardPage() {
   const gardenData = await getGardenData(profile.id)
 
   return (
-    <section className="relative min-h-[calc(100vh-5rem)] overflow-hidden">
+    <section className="relative min-h-[calc(100vh-64px)] overflow-hidden">
       <div className="absolute inset-0">
         <Image
           src="/landing/hero-gradient-light.svg"
@@ -31,7 +31,7 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="relative z-10 py-4">
+      <div className="relative z-10">
         <DashboardClient profile={profile} gardenData={gardenData} />
       </div>
     </section>
