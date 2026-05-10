@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import type { GardenTile, Profile } from "@/lib/server-data"
 import {
+  cancelSessionAction,
   completeFocusSessionAction,
   startFocusSessionAction,
 } from "@/app/actions/sessions"
@@ -54,6 +55,7 @@ export function FocusTimer({ profile, initialGardenData }: FocusTimerProps) {
   const [isRunning, setIsRunning] = useState(false)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [todayStage, setTodayStage] = useState<number | null>(
     initialGardenData.todayStage ?? 0,
   )
@@ -92,51 +94,65 @@ export function FocusTimer({ profile, initialGardenData }: FocusTimerProps) {
     setPlannedMinutes(durationMinutes)
     setPlannedInput(String(durationMinutes))
     setUpdating(true)
+    setErrorMessage(null)
 
-    try {
-      const data = await startFocusSessionAction(durationMinutes)
-      const startSeconds = data.plannedMinutes * 60
-      setCurrentSessionId(data.sessionId)
-      setSessionInitialSeconds(startSeconds)
-      setTimerSeconds(startSeconds)
-      setIsRunning(true)
-    } catch (error) {
-      console.error("Failed to start session", error)
-    } finally {
+    const result = await startFocusSessionAction(durationMinutes)
+    if (result.error) {
+      setErrorMessage(result.error)
       setUpdating(false)
+      return
     }
+
+    const startSeconds = result.data.plannedMinutes * 60
+    setCurrentSessionId(result.data.sessionId)
+    setSessionInitialSeconds(startSeconds)
+    setTimerSeconds(startSeconds)
+    setIsRunning(true)
+    setUpdating(false)
   }
 
   const completeSession = async () => {
     if (!profile || !currentSessionId) return
     setUpdating(true)
     setIsRunning(false)
+    setErrorMessage(null)
 
     const totalSeconds = sessionInitialSeconds ?? plannedMinutes * 60
     const elapsedSeconds = totalSeconds - timerSeconds
     const elapsedMinutes = Math.max(1, Math.round(elapsedSeconds / 60))
     const requiredMinutes = (sessionInitialSeconds ?? plannedMinutes * 60) / 60
 
-    try {
-      const gardenData = await completeFocusSessionAction({
-        sessionId: currentSessionId,
-        elapsedMinutes,
-        requiredMinutes,
-      })
-      setTodayStage(gardenData.todayStage)
-      setHistoryTiles(gardenData.historyTiles)
-    } catch (error) {
-      console.error("Failed to complete session", error)
+    const result = await completeFocusSessionAction({
+      sessionId: currentSessionId,
+      elapsedMinutes,
+      requiredMinutes,
+    })
+
+    if (result.error) {
+      setErrorMessage(result.error)
+      setUpdating(false)
+      return
     }
 
+    setTodayStage(result.data.todayStage)
+    setHistoryTiles(result.data.historyTiles)
     setCurrentSessionId(null)
     setSessionInitialSeconds(null)
     setTimerSeconds(plannedMinutes * 60)
     setUpdating(false)
   }
 
-  const cancelSession = () => {
+  const cancelSession = async () => {
     setIsRunning(false)
+    setErrorMessage(null)
+
+    if (currentSessionId) {
+      const result = await cancelSessionAction(currentSessionId)
+      if (result.error) {
+        setErrorMessage(result.error)
+      }
+    }
+
     setCurrentSessionId(null)
     setSessionInitialSeconds(null)
     setTimerSeconds(plannedMinutes * 60)
@@ -159,6 +175,12 @@ export function FocusTimer({ profile, initialGardenData }: FocusTimerProps) {
       <p className="text-xs text-[color:var(--color-text-muted)] mb-4">
         Set a focus session. Each completed session grows your plant for today.
       </p>
+
+      {errorMessage && (
+        <div className="mb-4 rounded-md bg-red-100 dark:bg-red-900 p-3 text-sm text-red-800 dark:text-red-200">
+          {errorMessage}
+        </div>
+      )}
 
         <div className="flex flex-col items-center gap-6">
           <div

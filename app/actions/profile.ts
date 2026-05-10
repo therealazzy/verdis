@@ -2,13 +2,16 @@
 
 import { revalidatePath } from "next/cache"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import type { ActionResult } from "@/lib/types"
 
-export async function updateUsernameAction(formData: FormData) {
+export async function updateUsernameAction(
+  formData: FormData,
+): Promise<ActionResult<{ username: string }>> {
   const usernameValue = formData.get("username")
   const username = typeof usernameValue === "string" ? usernameValue.trim() : ""
 
   if (!username) {
-    return { error: "Username cannot be empty." }
+    return { data: null, error: "Username cannot be empty." }
   }
 
   const supabase = await createSupabaseServerClient()
@@ -17,7 +20,7 @@ export async function updateUsernameAction(formData: FormData) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return { error: "You must be logged in." }
+    return { data: null, error: "You must be logged in." }
   }
 
   const { error } = await supabase
@@ -26,9 +29,9 @@ export async function updateUsernameAction(formData: FormData) {
     .eq("id", user.id)
 
   if (error) {
-    return { error: "Failed to update username." }
+    return { data: null, error: "Failed to update username." }
   }
 
   revalidatePath("/profile")
-  return { success: "Username updated." }
+  return { data: { username }, error: null }
 }

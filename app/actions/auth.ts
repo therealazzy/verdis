@@ -43,7 +43,14 @@ export async function signupAction(formData: FormData) {
   }
 
   if (data.user) {
-    await supabase.from("profiles").update({ username }).eq("id", data.user.id)
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ username })
+      .eq("id", data.user.id)
+
+    if (profileError) {
+      redirect("/signup?error=profile_setup_failed")
+    }
   }
 
   redirect("/login?success=account_created")
@@ -51,6 +58,11 @@ export async function signupAction(formData: FormData) {
 
 export async function signOutAction() {
   const supabase = await createSupabaseServerClient()
-  await supabase.auth.signOut()
+  const { error } = await supabase.auth.signOut()
+
+  if (error) {
+    redirect("/login?error=signout_failed")
+  }
+
   redirect("/login")
 }

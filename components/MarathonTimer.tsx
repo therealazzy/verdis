@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import type { GardenTile, Profile } from "@/lib/server-data"
 import {
+  cancelSessionAction,
   completeMarathonSessionAction,
   startMarathonSessionAction,
 } from "@/app/actions/sessions"
@@ -60,6 +61,7 @@ export function MarathonTimer({ profile, initialGardenData }: MarathonTimerProps
   const [secondsLeft, setSecondsLeft] = useState(focusMinutes * 60)
   const [isRunning, setIsRunning] = useState(false)
   const [updating, setUpdating] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [todayStage, setTodayStage] = useState<number | null>(initialGardenData.todayStage ?? 0)
   const [historyTiles, setHistoryTiles] = useState<GardenTile[]>(initialGardenData.historyTiles ?? [])
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
@@ -116,6 +118,7 @@ export function MarathonTimer({ profile, initialGardenData }: MarathonTimerProps
   const start = async () => {
     if (!profile || isRunning) return
     setUpdating(true)
+    setErrorMessage(null)
 
     // Resolve any pending input edits before starting
     const parsedFocus = Number(focusInput)
@@ -126,25 +129,37 @@ export function MarathonTimer({ profile, initialGardenData }: MarathonTimerProps
     setFocusMinutes(nextFocus)
     setFocusInput(String(nextFocus))
 
-    try {
-      const data = await startMarathonSessionAction({
-        focusMinutes: nextFocus,
-        blocks,
-      })
-      setCurrentSessionId(data.sessionId)
-      setPhase("focus")
-      setCurrentBlock(1)
-      setSecondsLeft(Math.max(20, Math.round(nextFocus)) * 60)
-      setIsRunning(true)
-    } catch (error) {
-      console.error("Failed to start marathon session", error)
-    } finally {
+    const result = await startMarathonSessionAction({
+      focusMinutes: nextFocus,
+      blocks,
+    })
+    
+    if (result.error) {
+      setErrorMessage(result.error)
       setUpdating(false)
+      return
     }
+
+    setCurrentSessionId(result.data.sessionId)
+    setPhase("focus")
+    setCurrentBlock(1)
+    setSecondsLeft(Math.max(20, Math.round(nextFocus)) * 60)
+    setIsRunning(true)
+    setUpdating(false)
   }
 
-  const reset = () => {
+  const reset = async () => {
     setIsRunning(false)
+    setErrorMessage(null)
+
+    if (currentSessionId) {
+      const result = await cancelSessionAction(currentSessionId)
+      if (result.error) {
+        setErrorMessage(result.error)
+      }
+    }
+
+    setCurrentSessionId(null)
     setPhase("focus")
     setCurrentBlock(1)
     setSecondsLeft(Math.max(20, Math.round(focusMinutes)) * 60)
@@ -159,20 +174,23 @@ export function MarathonTimer({ profile, initialGardenData }: MarathonTimerProps
 
   const completeMarathonSession = async () => {
     if (!currentSessionId) return
+    setErrorMessage(null)
 
     const elapsedMinutes = totalPlannedFocusMinutes
 
-    try {
-      const data = await completeMarathonSessionAction({
-        sessionId: currentSessionId,
-        elapsedMinutes,
-      })
-      setTodayStage(data.todayStage)
-      setHistoryTiles(data.historyTiles)
-      setCurrentSessionId(null)
-    } catch (error) {
-      console.error("Failed to complete marathon session", error)
+    const result = await completeMarathonSessionAction({
+      sessionId: currentSessionId,
+      elapsedMinutes,
+    })
+
+    if (result.error) {
+      setErrorMessage(result.error)
+      return
     }
+
+    setTodayStage(result.data.todayStage)
+    setHistoryTiles(result.data.historyTiles)
+    setCurrentSessionId(null)
   }
 
   return (
@@ -187,6 +205,12 @@ export function MarathonTimer({ profile, initialGardenData }: MarathonTimerProps
       <span className="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)]">
           {isFocus ? "Focus" : "Break"} • Block {currentBlock} of {blocks}
         </span>
+
+      {errorMessage && (
+        <div className="my-3 rounded-md bg-red-100 dark:bg-red-900 p-3 text-sm text-red-800 dark:text-red-200">
+          {errorMessage}
+        </div>
+      )}
       <div className="flex flex-col items-center gap-4 mb-4">
         <div
           className={`w-40 h-40 sm:w-48 sm:h-48 rounded-full border-4 border-[color:var(--color-border-soft)] flex items-center justify-center shadow-[0_0_40px_rgba(0,0,0,0.5)] ${
