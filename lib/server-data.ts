@@ -14,6 +14,40 @@ export type GardenTile = {
   plant_type: string
 }
 
+function toUtcDateOnly(dateString: string) {
+  return new Date(`${dateString}T00:00:00.000Z`)
+}
+
+function diffDaysUtc(later: Date, earlier: Date) {
+  const msPerDay = 24 * 60 * 60 * 1000
+  return Math.floor((later.getTime() - earlier.getTime()) / msPerDay)
+}
+
+function computeCurrentStreakFromDates(dates: string[]) {
+  if (dates.length === 0) return 0
+
+  const sorted = [...dates].sort((a, b) => b.localeCompare(a))
+  const uniqueSorted = sorted.filter((date, index) => date !== sorted[index - 1])
+
+  const today = new Date()
+  const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
+  const latestDate = toUtcDateOnly(uniqueSorted[0])
+  const latestGap = diffDaysUtc(todayUtc, latestDate)
+
+  // If the most recent activity is older than yesterday, streak is broken.
+  if (latestGap > 1) return 0
+
+  let streak = 1
+  for (let i = 1; i < uniqueSorted.length; i += 1) {
+    const prev = toUtcDateOnly(uniqueSorted[i - 1])
+    const current = toUtcDateOnly(uniqueSorted[i])
+    if (diffDaysUtc(prev, current) !== 1) break
+    streak += 1
+  }
+
+  return streak
+}
+
 export const getAuthProfile = cache(async () => {
   const supabase = await createSupabaseServerClient()
   const {
@@ -22,20 +56,38 @@ export const getAuthProfile = cache(async () => {
 
   if (!user) return null
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, username, current_streak, longest_streak")
-    .eq("id", user.id)
-    .single()
+  const [{ data: profile }, { data: streakDates }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, username, current_streak, longest_streak")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("garden_tiles")
+      .select("date")
+      .eq("user_id", user.id)
+      .gt("plant_stage", 0)
+      .order("date", { ascending: false })
+      .limit(90),
+  ])
 
-  return (
-    profile ?? {
+  const computedCurrentStreak = computeCurrentStreakFromDates(
+    (streakDates ?? []).map((row) => row.date as string),
+  )
+
+  if (!profile) {
+    return {
       id: user.id,
       username: null,
-      current_streak: 0,
+      current_streak: computedCurrentStreak,
       longest_streak: 0,
     }
-  ) as Profile
+  }
+
+  return {
+    ...profile,
+    current_streak: computedCurrentStreak,
+  } as Profile
 })
 
 export async function getSessionStats(userId: string) {

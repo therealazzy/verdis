@@ -7,6 +7,7 @@ import {
   completeMarathonSessionAction,
   startMarathonSessionAction,
 } from "@/app/actions/sessions"
+import { formatGardenDateLabel } from "@/lib/utils"
 
 function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60)
@@ -340,12 +341,7 @@ export function MarathonTimer({ profile, initialGardenData }: MarathonTimerProps
           </h2>
           <div className="grid grid-cols-5 gap-3 sm:grid-cols-7">
             {historyTiles.map((tile) => {
-              const date = new Date(tile.date)
-              const label = date.toLocaleDateString(undefined, {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-              })
+              const label = formatGardenDateLabel(tile.date)
               return (
                 <div
                   key={tile.date}
