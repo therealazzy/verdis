@@ -134,7 +134,7 @@ export function MarathonTimer({ profile, initialGardenData }: MarathonTimerProps
       blocks,
     })
     
-    if (result.error) {
+    if (result.data === null) {
       setErrorMessage(result.error)
       setUpdating(false)
       return
@@ -183,7 +183,7 @@ export function MarathonTimer({ profile, initialGardenData }: MarathonTimerProps
       elapsedMinutes,
     })
 
-    if (result.error) {
+    if (result.data === null) {
       setErrorMessage(result.error)
       return
     }

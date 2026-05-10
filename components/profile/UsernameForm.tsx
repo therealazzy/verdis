@@ -14,12 +14,22 @@ type FormState = {
 
 const initialState: FormState = {}
 
+async function submitUsername(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const result = await updateUsernameAction(formData)
+  if (result.data === null) {
+    return { error: result.error }
+  }
+  return { success: "Username updated." }
+}
+
 export function UsernameForm({ initialUsername }: UsernameFormProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [usernameInput, setUsernameInput] = useState(initialUsername)
   const [state, formAction, pending] = useActionState(
-    async (_prevState: FormState, formData: FormData) =>
-      updateUsernameAction(formData),
+    submitUsername,
     initialState,
   )
 

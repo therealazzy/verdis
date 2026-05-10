@@ -97,7 +97,7 @@ export function FocusTimer({ profile, initialGardenData }: FocusTimerProps) {
     setErrorMessage(null)
 
     const result = await startFocusSessionAction(durationMinutes)
-    if (result.error) {
+    if (result.data === null) {
       setErrorMessage(result.error)
       setUpdating(false)
       return
@@ -128,7 +128,7 @@ export function FocusTimer({ profile, initialGardenData }: FocusTimerProps) {
       requiredMinutes,
     })
 
-    if (result.error) {
+    if (result.data === null) {
       setErrorMessage(result.error)
       setUpdating(false)
       return
