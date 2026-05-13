@@ -90,8 +90,11 @@ export async function completeFocusSessionAction(params: {
     return { data: null, error: `Failed to complete session: ${rpcError.message}` }
   }
 
-  const gardenData = await getGardenData(userId)
-  return { data: gardenData, error: null }
+  const gardenResult = await getGardenData(userId)
+  if (!gardenResult.ok) {
+    return { data: null, error: "Failed to fetch garden data" }
+  }
+  return { data: gardenResult.data, error: null }
 }
 
 export async function startMarathonSessionAction(params: {
@@ -165,8 +168,11 @@ export async function completeMarathonSessionAction(params: {
     return { data: null, error: `Failed to complete session: ${rpcError.message}` }
   }
 
-  const gardenData = await getGardenData(userId)
-  return { data: gardenData, error: null }
+  const gardenResult = await getGardenData(userId)
+  if (!gardenResult.ok) {
+    return { data: null, error: "Failed to fetch garden data" }
+  }
+  return { data: gardenResult.data, error: null }
 }
 
 export async function cancelSessionAction(

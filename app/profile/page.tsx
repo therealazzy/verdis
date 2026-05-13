@@ -38,8 +38,7 @@ export default async function ProfilePage() {
       </section>
     )
   }
-  const stats = await getSessionStats(profile.id)
-  const totalHours = (stats.totalMinutes || 0) / 60
+  const statsResult = await getSessionStats(profile.id)
 
   return (
     <section className="relative h-[calc(100vh-64px)] overflow-hidden px-6 py-0 md:px-16 lg:px-24 xl:px-32">
@@ -97,15 +96,26 @@ export default async function ProfilePage() {
                   <span className="text-[11px] uppercase tracking-wide text-[color:var(--color-text-muted)]">
                     Completed sessions
                   </span>
-                  <div className="mt-1 text-base font-medium">{stats.completedSessions}</div>
+                  <div className="mt-1 text-base font-medium">
+                    {statsResult.ok ? statsResult.stats.completedSessions : "—"}
+                  </div>
                 </div>
                 <div>
                   <span className="text-[11px] uppercase tracking-wide text-[color:var(--color-text-muted)]">
                     Focus hours
                   </span>
-                  <div className="mt-1 text-base font-medium">{totalHours.toFixed(1)}</div>
+                  <div className="mt-1 text-base font-medium">
+                    {statsResult.ok
+                      ? ((statsResult.stats.totalMinutes || 0) / 60).toFixed(1)
+                      : "—"}
+                  </div>
                 </div>
               </div>
+              {!statsResult.ok ? (
+                <p className="mt-2 text-[11px] text-[color:var(--color-text-muted)]">
+                  Session statistics could not be loaded ({statsResult.error.message}).
+                </p>
+              ) : null}
             </div>
           </div>
 

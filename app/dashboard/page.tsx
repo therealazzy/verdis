@@ -10,7 +10,10 @@ export default async function DashboardPage() {
     redirect("/login")
   }
 
-  const gardenData = await getGardenData(profile.id)
+  const gardenResult = await getGardenData(profile.id)
+  if (!gardenResult.ok) {
+    throw new Error(gardenResult.error.message)
+  }
 
   return (
     <section className="relative min-h-[calc(100vh-64px)] overflow-hidden">
@@ -32,7 +35,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="relative z-10">
-        <DashboardClient profile={profile} gardenData={gardenData} />
+        <DashboardClient profile={profile} gardenData={gardenResult.data} />
       </div>
     </section>
   )

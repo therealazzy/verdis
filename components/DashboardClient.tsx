@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import type { GardenTile, Profile } from "@/lib/server-data"
+import type { GardenData, Profile } from "@/lib/server-data"
 import { FocusTimer } from "@/components/FocusTimer"
 import { MarathonTimer } from "@/components/MarathonTimer"
 
@@ -9,10 +9,7 @@ type TimerMode = "focus" | "marathon"
 
 type DashboardClientProps = {
   profile: Profile | null
-  gardenData: {
-    todayStage: number
-    historyTiles: GardenTile[]
-  }
+  gardenData: GardenData
 }
 
 export function DashboardClient({ profile, gardenData }: DashboardClientProps) {
