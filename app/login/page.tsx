@@ -1,27 +1,27 @@
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
-import { loginAction } from "@/app/actions/auth";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation"
+import Link from "next/link"
+import Image from "next/image"
+import { loginAction } from "@/app/actions/auth"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string }>
 }) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient()
   const {
     data: { user },
-  } = await supabase.auth.getUser();
-  if (user) redirect("/");
+  } = await supabase.auth.getUser()
+  if (user) redirect("/")
 
-  const params = await searchParams;
+  const params = await searchParams
   const errorMessage =
     params.error === "missing_fields"
       ? "Please fill in both email and password."
       : params.error === "invalid_credentials"
-      ? "Invalid email or password."
-      : "";
+        ? "Invalid email or password."
+        : ""
 
   return (
     <section className="px-6 py-6 md:px-16 lg:px-24 xl:px-32">
@@ -81,15 +81,12 @@ export default async function LoginPage({
           </button>
           <p className="mt-4 text-sm text-[color:var(--color-text-muted)]">
             New to Verdis?{" "}
-            <Link
-              href="/signup"
-              className="font-medium text-[color:var(--color-accent)]"
-            >
+            <Link href="/signup" className="font-medium text-[color:var(--color-accent)]">
               Create an account
             </Link>
           </p>
         </form>
       </div>
     </section>
-  );
+  )
 }
