@@ -1,13 +1,12 @@
 import { getAuthProfile, getGardenData } from "@/lib/server-data"
 import { DashboardClient } from "@/components/DashboardClient"
-import { redirect } from "next/navigation"
 import Image from "next/image"
 
 export default async function DashboardPage() {
   const profile = await getAuthProfile()
 
   if (!profile) {
-    redirect("/login")
+    throw new Error("Unable to load profile")
   }
 
   const gardenResult = await getGardenData(profile.id)
