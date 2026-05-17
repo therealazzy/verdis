@@ -42,6 +42,7 @@ function diffDaysUtc(later: Date, earlier: Date) {
   return Math.floor((later.getTime() - earlier.getTime()) / msPerDay)
 }
 
+
 function computeCurrentStreakFromDates(dates: string[]) {
   if (dates.length === 0) return 0
 

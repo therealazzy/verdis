@@ -17,6 +17,7 @@ export async function loginAction(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient()
+  supabase.from("profilesssss")
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
@@ -35,7 +36,7 @@ export async function signupAction(formData: FormData) {
     redirect("/signup?error=missing_fields")
   }
 
-  const supabase = await createSupabaseServerClient()
+const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase.auth.signUp({ email, password })
 
   if (error) {
